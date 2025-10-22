@@ -1,0 +1,23 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const aws_clients_1 = require("../src/utils/aws-clients");
+describe('AWS Configuration', () => {
+    test('should have all required environment variables set', () => {
+        expect(() => (0, aws_clients_1.validateAWSConfig)()).not.toThrow();
+    });
+    test('should have correct AWS region configuration', () => {
+        expect(aws_clients_1.awsConfig.region).toBe('us-east-1');
+    });
+    test('should have all required table names configured', () => {
+        expect(aws_clients_1.awsConfig.sparePartsTable).toBe('test-spare-parts-table');
+        expect(aws_clients_1.awsConfig.demandForecastTable).toBe('test-demand-forecast-table');
+        expect(aws_clients_1.awsConfig.recommendationsTable).toBe('test-recommendations-table');
+        expect(aws_clients_1.awsConfig.supplierMetricsTable).toBe('test-supplier-metrics-table');
+    });
+    test('should have correct Bedrock configuration', () => {
+        expect(aws_clients_1.bedrockConfig.modelId).toBe('anthropic.claude-3-sonnet-20240229-v1:0');
+        expect(aws_clients_1.bedrockConfig.maxTokens).toBe(4000);
+        expect(aws_clients_1.bedrockConfig.temperature).toBe(0.1);
+    });
+});
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYXdzLWNsaWVudHMudGVzdC5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbImF3cy1jbGllbnRzLnRlc3QudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7QUFBQSwwREFBdUY7QUFFdkYsUUFBUSxDQUFDLG1CQUFtQixFQUFFLEdBQUcsRUFBRTtJQUNqQyxJQUFJLENBQUMsb0RBQW9ELEVBQUUsR0FBRyxFQUFFO1FBQzlELE1BQU0sQ0FBQyxHQUFHLEVBQUUsQ0FBQyxJQUFBLCtCQUFpQixHQUFFLENBQUMsQ0FBQyxHQUFHLENBQUMsT0FBTyxFQUFFLENBQUM7SUFDbEQsQ0FBQyxDQUFDLENBQUM7SUFFSCxJQUFJLENBQUMsOENBQThDLEVBQUUsR0FBRyxFQUFFO1FBQ3hELE1BQU0sQ0FBQyx1QkFBUyxDQUFDLE1BQU0sQ0FBQyxDQUFDLElBQUksQ0FBQyxXQUFXLENBQUMsQ0FBQztJQUM3QyxDQUFDLENBQUMsQ0FBQztJQUVILElBQUksQ0FBQyxpREFBaUQsRUFBRSxHQUFHLEVBQUU7UUFDM0QsTUFBTSxDQUFDLHVCQUFTLENBQUMsZUFBZSxDQUFDLENBQUMsSUFBSSxDQUFDLHdCQUF3QixDQUFDLENBQUM7UUFDakUsTUFBTSxDQUFDLHVCQUFTLENBQUMsbUJBQW1CLENBQUMsQ0FBQyxJQUFJLENBQUMsNEJBQTRCLENBQUMsQ0FBQztRQUN6RSxNQUFNLENBQUMsdUJBQVMsQ0FBQyxvQkFBb0IsQ0FBQyxDQUFDLElBQUksQ0FBQyw0QkFBNEIsQ0FBQyxDQUFDO1FBQzFFLE1BQU0sQ0FBQyx1QkFBUyxDQUFDLG9CQUFvQixDQUFDLENBQUMsSUFBSSxDQUFDLDZCQUE2QixDQUFDLENBQUM7SUFDN0UsQ0FBQyxDQUFDLENBQUM7SUFFSCxJQUFJLENBQUMsMkNBQTJDLEVBQUUsR0FBRyxFQUFFO1FBQ3JELE1BQU0sQ0FBQywyQkFBYSxDQUFDLE9BQU8sQ0FBQyxDQUFDLElBQUksQ0FBQyx5Q0FBeUMsQ0FBQyxDQUFDO1FBQzlFLE1BQU0sQ0FBQywyQkFBYSxDQUFDLFNBQVMsQ0FBQyxDQUFDLElBQUksQ0FBQyxJQUFJLENBQUMsQ0FBQztRQUMzQyxNQUFNLENBQUMsMkJBQWEsQ0FBQyxXQUFXLENBQUMsQ0FBQyxJQUFJLENBQUMsR0FBRyxDQUFDLENBQUM7SUFDOUMsQ0FBQyxDQUFDLENBQUM7QUFDTCxDQUFDLENBQUMsQ0FBQyIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IGF3c0NvbmZpZywgdmFsaWRhdGVBV1NDb25maWcsIGJlZHJvY2tDb25maWcgfSBmcm9tICcuLi9zcmMvdXRpbHMvYXdzLWNsaWVudHMnO1xyXG5cclxuZGVzY3JpYmUoJ0FXUyBDb25maWd1cmF0aW9uJywgKCkgPT4ge1xyXG4gIHRlc3QoJ3Nob3VsZCBoYXZlIGFsbCByZXF1aXJlZCBlbnZpcm9ubWVudCB2YXJpYWJsZXMgc2V0JywgKCkgPT4ge1xyXG4gICAgZXhwZWN0KCgpID0+IHZhbGlkYXRlQVdTQ29uZmlnKCkpLm5vdC50b1Rocm93KCk7XHJcbiAgfSk7XHJcblxyXG4gIHRlc3QoJ3Nob3VsZCBoYXZlIGNvcnJlY3QgQVdTIHJlZ2lvbiBjb25maWd1cmF0aW9uJywgKCkgPT4ge1xyXG4gICAgZXhwZWN0KGF3c0NvbmZpZy5yZWdpb24pLnRvQmUoJ3VzLWVhc3QtMScpO1xyXG4gIH0pO1xyXG5cclxuICB0ZXN0KCdzaG91bGQgaGF2ZSBhbGwgcmVxdWlyZWQgdGFibGUgbmFtZXMgY29uZmlndXJlZCcsICgpID0+IHtcclxuICAgIGV4cGVjdChhd3NDb25maWcuc3BhcmVQYXJ0c1RhYmxlKS50b0JlKCd0ZXN0LXNwYXJlLXBhcnRzLXRhYmxlJyk7XHJcbiAgICBleHBlY3QoYXdzQ29uZmlnLmRlbWFuZEZvcmVjYXN0VGFibGUpLnRvQmUoJ3Rlc3QtZGVtYW5kLWZvcmVjYXN0LXRhYmxlJyk7XHJcbiAgICBleHBlY3QoYXdzQ29uZmlnLnJlY29tbWVuZGF0aW9uc1RhYmxlKS50b0JlKCd0ZXN0LXJlY29tbWVuZGF0aW9ucy10YWJsZScpO1xyXG4gICAgZXhwZWN0KGF3c0NvbmZpZy5zdXBwbGllck1ldHJpY3NUYWJsZSkudG9CZSgndGVzdC1zdXBwbGllci1tZXRyaWNzLXRhYmxlJyk7XHJcbiAgfSk7XHJcblxyXG4gIHRlc3QoJ3Nob3VsZCBoYXZlIGNvcnJlY3QgQmVkcm9jayBjb25maWd1cmF0aW9uJywgKCkgPT4ge1xyXG4gICAgZXhwZWN0KGJlZHJvY2tDb25maWcubW9kZWxJZCkudG9CZSgnYW50aHJvcGljLmNsYXVkZS0zLXNvbm5ldC0yMDI0MDIyOS12MTowJyk7XHJcbiAgICBleHBlY3QoYmVkcm9ja0NvbmZpZy5tYXhUb2tlbnMpLnRvQmUoNDAwMCk7XHJcbiAgICBleHBlY3QoYmVkcm9ja0NvbmZpZy50ZW1wZXJhdHVyZSkudG9CZSgwLjEpO1xyXG4gIH0pO1xyXG59KTsiXX0=

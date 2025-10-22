@@ -1,0 +1,55 @@
+{
+  "environment": "staging",
+  "region": "us-east-1",
+  "stackName": "InventoryReplenishmentStack-staging",
+  "domainName": "staging-inventory.example.com",
+  "certificateArn": "arn:aws:acm:us-east-1:123456789012:certificate/staging-cert-id",
+  "hostedZoneId": "Z123456789012",
+  "enableCloudFront": true,
+  "enableWAF": true,
+  "enableXRay": true,
+  "logLevel": "INFO",
+  "retentionDays": 30,
+  "monitoring": {
+    "enableDetailedMetrics": true,
+    "alarmNotificationEmail": "staging-alerts@example.com",
+    "enableDashboard": true
+  },
+  "database": {
+    "billingMode": "PAY_PER_REQUEST",
+    "pointInTimeRecovery": true,
+    "backupRetention": 30
+  },
+  "lambda": {
+    "timeout": 60,
+    "memorySize": 1024,
+    "reservedConcurrency": 50
+  },
+  "s3": {
+    "versioning": true,
+    "lifecycleRules": {
+      "transitionToIA": 30,
+      "transitionToGlacier": 90,
+      "expiration": 730
+    }
+  },
+  "apiGateway": {
+    "throttling": {
+      "rateLimit": 5000,
+      "burstLimit": 10000
+    },
+    "caching": true,
+    "cacheTtl": 300
+  },
+  "bedrock": {
+    "modelId": "anthropic.claude-3-sonnet-20240229-v1:0",
+    "maxTokens": 4096,
+    "temperature": 0.1
+  },
+  "sagemaker": {
+    "instanceType": "ml.m5.large",
+    "enableAutoScaling": true,
+    "minCapacity": 1,
+    "maxCapacity": 5
+  }
+}

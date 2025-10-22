@@ -1,0 +1,66 @@
+{
+  "environment": "production",
+  "region": "us-east-1",
+  "stackName": "InventoryReplenishmentStack-production",
+  "domainName": "inventory.example.com",
+  "certificateArn": "arn:aws:acm:us-east-1:123456789012:certificate/prod-cert-id",
+  "hostedZoneId": "Z123456789012",
+  "enableCloudFront": true,
+  "enableWAF": true,
+  "enableXRay": true,
+  "logLevel": "WARN",
+  "retentionDays": 90,
+  "monitoring": {
+    "enableDetailedMetrics": true,
+    "alarmNotificationEmail": "prod-alerts@example.com",
+    "enableDashboard": true
+  },
+  "database": {
+    "billingMode": "PROVISIONED",
+    "readCapacity": 100,
+    "writeCapacity": 50,
+    "pointInTimeRecovery": true,
+    "backupRetention": 90
+  },
+  "lambda": {
+    "timeout": 300,
+    "memorySize": 2048,
+    "reservedConcurrency": 100
+  },
+  "s3": {
+    "versioning": true,
+    "mfaDelete": true,
+    "lifecycleRules": {
+      "transitionToIA": 30,
+      "transitionToGlacier": 90,
+      "transitionToDeepArchive": 365,
+      "expiration": 2555
+    }
+  },
+  "apiGateway": {
+    "throttling": {
+      "rateLimit": 10000,
+      "burstLimit": 20000
+    },
+    "caching": true,
+    "cacheTtl": 600
+  },
+  "bedrock": {
+    "modelId": "anthropic.claude-3-sonnet-20240229-v1:0",
+    "maxTokens": 4096,
+    "temperature": 0.1
+  },
+  "sagemaker": {
+    "instanceType": "ml.m5.xlarge",
+    "enableAutoScaling": true,
+    "minCapacity": 2,
+    "maxCapacity": 10
+  },
+  "security": {
+    "enableEncryption": true,
+    "kmsKeyRotation": true,
+    "enableCloudTrail": true,
+    "enableGuardDuty": true,
+    "enableSecurityHub": true
+  }
+}

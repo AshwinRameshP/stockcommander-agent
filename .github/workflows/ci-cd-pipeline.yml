@@ -1,0 +1,348 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18'
+  AWS_REGION: 'us-east-1'
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        npm ci
+        cd frontend && npm ci
+
+    - name: Run linting
+      run: |
+        npm run lint
+        cd frontend && npm run lint
+
+    - name: Run unit tests
+      run: |
+        npm test -- --coverage --watchAll=false
+        cd frontend && npm test -- --coverage --watchAll=false
+
+    - name: Run integration tests
+      run: npm run test:integration
+
+    - name: Upload test coverage
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage/lcov.info,./frontend/coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run security audit
+      run: |
+        npm audit --audit-level high
+        cd frontend && npm audit --audit-level high
+
+    - name: Run Snyk security scan
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high
+
+    - name: Run OWASP dependency check
+      uses: dependency-check/Dependency-Check_Action@main
+      with:
+        project: 'inventory-replenishment'
+        path: '.'
+        format: 'JSON'
+
+  build-and-deploy-dev:
+    name: Build and Deploy to Development
+    runs-on: ubuntu-latest
+    needs: [test, security-scan]
+    if: github.ref == 'refs/heads/develop'
+    
+    environment:
+      name: development
+      url: https://dev-inventory.example.com
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Install dependencies
+      run: |
+        npm ci
+        cd frontend && npm ci
+
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+        
+    - name: Run CDK diff
+      run: |
+        npm run cdk:diff -- --context environment=dev
+        
+    - name: Deploy infrastructure
+      run: |
+        npm run cdk:deploy -- --context environment=dev --require-approval never
+
+    - name: Deploy frontend to S3
+      run: |
+        aws s3 sync frontend/build/ s3://${{ secrets.FRONTEND_BUCKET_DEV }} --delete
+        aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_DEV }} --paths "/*"
+
+    - name: Run smoke tests
+      run: npm run test:smoke -- --env=dev
+
+    - name: Notify deployment status
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  build-and-deploy-staging:
+    name: Build and Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [test, security-scan]
+    if: github.ref == 'refs/heads/main'
+    
+    environment:
+      name: staging
+      url: https://staging-inventory.example.com
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STAGING }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Install dependencies
+      run: |
+        npm ci
+        cd frontend && npm ci
+
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build:staging
+        
+    - name: Run CDK diff
+      run: |
+        npm run cdk:diff -- --context environment=staging
+        
+    - name: Deploy infrastructure
+      run: |
+        npm run cdk:deploy -- --context environment=staging --require-approval never
+
+    - name: Deploy frontend to S3
+      run: |
+        aws s3 sync frontend/build/ s3://${{ secrets.FRONTEND_BUCKET_STAGING }} --delete
+        aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_STAGING }} --paths "/*"
+
+    - name: Run end-to-end tests
+      run: npm run test:e2e -- --env=staging
+
+    - name: Run performance tests
+      run: npm run test:performance -- --env=staging
+
+    - name: Generate deployment report
+      run: |
+        npm run generate:deployment-report -- --env=staging
+        
+    - name: Upload deployment artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-artifacts-staging
+        path: |
+          deployment-report.html
+          test-results/
+          coverage/
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-and-deploy-staging]
+    if: github.ref == 'refs/heads/main'
+    
+    environment:
+      name: production
+      url: https://inventory.example.com
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Install dependencies
+      run: |
+        npm ci
+        cd frontend && npm ci
+
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build:production
+        
+    - name: Run CDK diff
+      run: |
+        npm run cdk:diff -- --context environment=production
+        
+    - name: Deploy infrastructure with blue-green strategy
+      run: |
+        npm run cdk:deploy -- --context environment=production --require-approval never
+
+    - name: Deploy frontend to S3
+      run: |
+        aws s3 sync frontend/build/ s3://${{ secrets.FRONTEND_BUCKET_PROD }} --delete
+        aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_PROD }} --paths "/*"
+
+    - name: Run production smoke tests
+      run: npm run test:smoke -- --env=production
+
+    - name: Monitor deployment health
+      run: |
+        npm run monitor:deployment-health -- --env=production --timeout=300
+
+    - name: Create GitHub release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: Release v${{ github.run_number }}
+        body: |
+          Automated release from commit ${{ github.sha }}
+          
+          ## Changes
+          ${{ github.event.head_commit.message }}
+          
+          ## Deployment
+          - Environment: Production
+          - Deployed at: ${{ github.event.head_commit.timestamp }}
+          - Commit: ${{ github.sha }}
+        draft: false
+        prerelease: false
+
+    - name: Notify production deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#production-deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow
+
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: failure()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Rollback to previous version
+      run: |
+        npm run rollback:infrastructure
+        npm run rollback:frontend
+
+    - name: Verify rollback
+      run: npm run test:smoke -- --env=production
+
+    - name: Notify rollback
+      uses: 8398a7/action-slack@v3
+      with:
+        status: 'warning'
+        channel: '#production-deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        text: 'Production deployment rolled back due to failure'

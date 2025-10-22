@@ -1,0 +1,52 @@
+{
+  "environment": "dev",
+  "region": "us-east-1",
+  "stackName": "InventoryReplenishmentStack-dev",
+  "domainName": "dev-inventory.example.com",
+  "certificateArn": "",
+  "hostedZoneId": "",
+  "enableCloudFront": false,
+  "enableWAF": false,
+  "enableXRay": true,
+  "logLevel": "DEBUG",
+  "retentionDays": 7,
+  "monitoring": {
+    "enableDetailedMetrics": true,
+    "alarmNotificationEmail": "dev-alerts@example.com",
+    "enableDashboard": true
+  },
+  "database": {
+    "billingMode": "PAY_PER_REQUEST",
+    "pointInTimeRecovery": false,
+    "backupRetention": 7
+  },
+  "lambda": {
+    "timeout": 30,
+    "memorySize": 512,
+    "reservedConcurrency": 10
+  },
+  "s3": {
+    "versioning": false,
+    "lifecycleRules": {
+      "transitionToIA": 30,
+      "transitionToGlacier": 90,
+      "expiration": 365
+    }
+  },
+  "apiGateway": {
+    "throttling": {
+      "rateLimit": 1000,
+      "burstLimit": 2000
+    },
+    "caching": false
+  },
+  "bedrock": {
+    "modelId": "anthropic.claude-3-sonnet-20240229-v1:0",
+    "maxTokens": 4096,
+    "temperature": 0.1
+  },
+  "sagemaker": {
+    "instanceType": "ml.t3.medium",
+    "enableAutoScaling": false
+  }
+}
