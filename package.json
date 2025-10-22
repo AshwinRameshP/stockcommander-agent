@@ -33,7 +33,9 @@
     "frontend:build:staging": "cd frontend && npm run build:staging",
     "frontend:build:production": "cd frontend && npm run build:production",
     "frontend:test": "cd frontend && npm test -- --watchAll=false",
-    "frontend:lint": "cd frontend && npm run lint"
+    "frontend:lint": "cd frontend && npm run lint",
+    "validate:deployment": "node scripts/validate-deployment.js",
+    "pre-deploy": "npm run validate:deployment && npm run lint && npm test -- --watchAll=false"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.119",
